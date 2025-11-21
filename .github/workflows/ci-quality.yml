@@ -2,7 +2,7 @@ name: CI Quality
 
 on:
   push:
-  pull_request: 
+  pull_request:
 
 jobs:
   quality:
@@ -11,7 +11,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -33,20 +32,31 @@ jobs:
       - name: Run coverage
         run: npm run test:coverage
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
       - name: Validate coverage threshold
         run: |
-          # Busca el porcentaje total de cobertura usando grep
-          COVERAGE=$(grep -oP 'All files.*?\K\d+(?=%)' ./coverage/lcov-report/index.html)
+          SUMMARY_FILE="./coverage/coverage-summary.json"
+
+          if [ ! -f "$SUMMARY_FILE" ]; then
+            echo "No se encontró coverage-summary.json"
+            exit 1
+          fi
+
+          # Leer porcentaje total de líneas
+          COVERAGE=$(jq '.total.lines.pct' $SUMMARY_FILE)
 
           echo "Cobertura detectada: $COVERAGE%"
 
           # Cambia el umbral aquí (ej: 80)
           THRESHOLD=80
 
-          if [ "$COVERAGE" -lt "$THRESHOLD" ]; then
+          # Comparación numérica confiable
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "Cobertura por debajo del umbral requerido de $THRESHOLD%"
             exit 1
           fi
 
           echo "Cobertura mínima alcanzada."
+        shell: bash
