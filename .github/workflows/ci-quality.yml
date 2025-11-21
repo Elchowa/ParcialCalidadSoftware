@@ -1,0 +1,52 @@
+name: CI Quality
+
+on:
+  push:
+  pull_request: 
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run coverage
+        run: npm run test:coverage
+
+
+      - name: Validate coverage threshold
+        run: |
+          # Busca el porcentaje total de cobertura usando grep
+          COVERAGE=$(grep -oP 'All files.*?\K\d+(?=%)' ./coverage/lcov-report/index.html)
+
+          echo "Cobertura detectada: $COVERAGE%"
+
+          # Cambia el umbral aquí (ej: 80)
+          THRESHOLD=80
+
+          if [ "$COVERAGE" -lt "$THRESHOLD" ]; then
+            echo "Cobertura por debajo del umbral requerido de $THRESHOLD%"
+            exit 1
+          fi
+
+          echo "Cobertura mínima alcanzada."
