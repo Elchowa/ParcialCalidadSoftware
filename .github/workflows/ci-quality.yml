@@ -37,10 +37,10 @@ jobs:
 
       - name: Validate coverage threshold
         run: |
-          SUMMARY_FILE="./coverage/coverage-summary.json"
+          SUMMARY_FILE="./coverage/coverage-final.json"
 
           if [ ! -f "$SUMMARY_FILE" ]; then
-            echo "No se encontró coverage-summary.json"
+            echo "No se encontró coverage-final.json"
             exit 1
           fi
 
