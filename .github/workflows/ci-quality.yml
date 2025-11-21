@@ -40,23 +40,31 @@ jobs:
           SUMMARY_FILE="./coverage/coverage-final.json"
 
           if [ ! -f "$SUMMARY_FILE" ]; then
-            echo "No se encontró coverage-final.json"
+            echo "❌ No se encontró coverage-final.json"
             exit 1
           fi
 
-          # Leer porcentaje total de líneas
-          COVERAGE=$(jq '.total.lines.pct' $SUMMARY_FILE)
+          # Extraer número de statements totales
+          TOTAL=$(jq '.[].s | length' $SUMMARY_FILE)
 
-          echo "Cobertura detectada: $COVERAGE%"
+          # Extraer número de statements cubiertos (valores = 1)
+          COVERED=$(jq '.[].s | map(select(. == 1)) | length' $SUMMARY_FILE)
 
-          # Cambia el umbral aquí (ej: 80)
+          # Calcular porcentaje
+          COVERAGE=$(echo "$COVERED * 100 / $TOTAL" | bc -l)
+
+          echo "Total de statements: $TOTAL"
+          echo "Statements cubiertos: $COVERED"
+          echo "Cobertura calculada: $COVERAGE%"
+
           THRESHOLD=80
 
-          # Comparación numérica confiable
+          # Comparar cobertura
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "Cobertura por debajo del umbral requerido de $THRESHOLD%"
+            echo "❌ Cobertura por debajo del umbral requerido ($THRESHOLD%)"
             exit 1
           fi
 
-          echo "Cobertura mínima alcanzada."
+          echo "✔ Cobertura mínima alcanzada."
+
         shell: bash
